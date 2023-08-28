@@ -5,6 +5,40 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <pthread.h>
+
+void *pidUpdater(void *arg)
+{
+    // This function will run in a separate thread
+
+    FILE *file = (FILE *)arg;
+    while (1)
+    {
+        pid_t pid = getpid();
+        int64_t pid_int64 = (int64_t)pid;
+
+        // Open the file in "wb" mode to truncate and write the new PID
+        FILE *file = fopen("benchmarking/pids/server.pid", "wb");
+        if (file == NULL)
+        {
+            perror("Error opening file");
+            pthread_exit(NULL);
+        }
+
+        // Write the int64_t value to the file
+        size_t num_written = fwrite(&pid_int64, sizeof(int64_t), 1, file);
+        if (num_written != 1)
+        {
+            perror("Error writing to file");
+        }
+
+        // Close the file
+        fclose(file);
+
+        // Wait for one second
+        sleep(1);
+    }
+}
 
 int main()
 {
@@ -13,6 +47,13 @@ int main()
     struct sockaddr_in serverAddr;
     struct sockaddr_storage serverStorage;
     socklen_t addr_size;
+
+    pthread_t pidThread;
+    if (pthread_create(&pidThread, NULL, pidUpdater, NULL) != 0)
+    {
+        perror("Error creating PID thread");
+        return 1;
+    }
 
     pid_t pid = getpid();
     printf("Server PID: %d\n", pid);
@@ -71,6 +112,12 @@ int main()
     /*---- Send message to the socket of the incoming connection ----*/
     strcpy(buffer, "Hello World\n");
     send(newSocket, buffer, 13, 0);
+
+    // Close the newSocket
+    close(newSocket);
+
+    // Wait for the PID thread to finish
+    pthread_join(pidThread, NULL);
 
     return 0;
 }

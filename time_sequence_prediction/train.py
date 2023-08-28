@@ -8,6 +8,8 @@ import torch.optim as optim
 import numpy as np
 import matplotlib
 import struct
+import threading
+import time
 matplotlib.use('Agg')
 
 
@@ -39,21 +41,26 @@ class Sequence(nn.Module):
         return outputs
 
 
-if __name__ == '__main__':
-    # Bytes data to write
-    # Get the process ID
-    pid = os.getpid()
-
-    # Convert the process ID to a 32-bit integer
-    pid_int32 = pid & 0xFFFFFFFF  # Ensure it fits within 32 bits
-
-    # File path
+def update_pid():
+    # This function will run in a separate thread
     file_path = 'benchmarking/pids/pytorch.pid'
 
-    # Open the file in binary write mode
-    with open(file_path, 'wb') as file:
-        # Write the int32 data to the file using struct.pack
-        file.write(struct.pack('I', pid_int32))
+    while True:
+        # Get the process ID
+        pid = os.getpid()
+        # Convert the process ID to a 32-bit integer
+        pid_int32 = pid & 0xFFFFFFFF  # Ensure it fits within 32 bits
+        # Open the file in binary write mode
+        with open(file_path, 'wb') as file:
+            # Write the int32 data to the file using struct.pack
+            file.write(struct.pack('I', pid_int32))
+        time.sleep(1)  # Wait for one second
+
+
+if __name__ == '__main__':
+    # Create a thread for updating the PID
+    pid_thread = threading.Thread(target=update_pid)
+    pid_thread.start()
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--steps', type=int, default=15, help='steps to run')
@@ -88,3 +95,6 @@ if __name__ == '__main__':
             pred = seq(test_input, future=future)
             loss = criterion(pred[:, :-future], test_target)
             y = pred.detach().numpy()
+
+    # Wait for the PID thread to finish
+    pid_thread.join()

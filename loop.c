@@ -1,43 +1,74 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 #include <omp.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <sys/stat.h>
+
+void *pidUpdater(void *arg)
+{
+    FILE *file = (FILE *)arg;
+    while (1)
+    {
+        pid_t pid = getpid();
+        int64_t pid_int64 = (int64_t)pid;
+
+        char filename[100]; // Adjust the size as needed
+        sprintf(filename, "benchmarking/pids/loop-%lld.pid", (long long)pid_int64);
+
+        FILE *pidFile = fopen(filename, "wb");
+        if (pidFile == NULL)
+        {
+            perror("Error opening PID file");
+            pthread_exit(NULL);
+        }
+
+        size_t num_written = fwrite(&pid_int64, sizeof(int64_t), 1, pidFile);
+        if (num_written != 1)
+        {
+            perror("Error writing to PID file");
+        }
+
+        fclose(pidFile);
+
+        chmod(filename, 0644);
+
+        sleep(1);
+    }
+}
 
 int main()
 {
     pid_t pid = getpid();
     printf("Loop PID: %d\n", pid);
 
-    // Convert to int64_t
     int64_t pid_int64 = (int64_t)pid;
 
-    // Open a file for writing
-    FILE *file = fopen("benchmarking/pids/loop.pid", "wb");
+    char filename[100]; // Adjust the size as needed
+    sprintf(filename, "benchmarking/pids/loop-%lld.pid", (long long)pid_int64);
+
+    FILE *file = fopen(filename, "wb");
     if (file == NULL)
     {
         perror("Error opening file");
         return 1;
     }
 
-    // Write the int64_t value to the file
-    size_t num_written = fwrite(&pid_int64, sizeof(int64_t), 1, file);
-    if (num_written != 1)
-    {
-        perror("Error writing to file");
-        fclose(file);
-        return 1;
-    }
-
-    fclose(file);
-
-    printf("PID written to benchmarking/pids/loop.pid\n");
-
     double start, end;
     double runTime;
     int num = 1, primes = 0;
 
     int limit = 10000000;
+
+    pthread_t pidThread;
+    if (pthread_create(&pidThread, NULL, pidUpdater, (void *)file) != 0)
+    {
+        perror("Error creating PID thread");
+        fclose(file);
+        return 1;
+    }
 
 #pragma omp parallel for schedule(dynamic) reduction(+ : primes)
     for (num = 1; num <= limit; num++)
@@ -51,13 +82,11 @@ int main()
         }
         if (i == num)
             primes++;
-        //      printf("%d prime numbers calculated\n",primes);
     }
 
-    runTime = end - start;
-    printf("This machine calculated all %d prime numbers under %d in %g seconds\n", primes, limit, runTime);
+    pthread_join(pidThread, NULL);
 
-    remove("../pids/pid-loop.txt");
+    fclose(file);
 
     return 0;
 }
