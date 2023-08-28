@@ -15,7 +15,7 @@ import time
 
 def update_pid():
     # This function will run in a separate thread
-    file_path = 'benchmarking/pids/pytorch-vision.pid'
+    file_path = 'benchmarking/pids/pytorch_vision.pid'
 
     while True:
         # Get the process ID
