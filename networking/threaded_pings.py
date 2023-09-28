@@ -22,7 +22,7 @@ def ping_server(ip, port):
             # Sleep for a while before trying to connect again (e.g., every 5 seconds)
             time.sleep(5)
 
-def main()
+def main():
     parser = argparse.ArgumentParser(description="Continuous TCP Server Pinger")
     parser.add_argument("ip", help="IP address of the server to ping")
     parser.add_argument("port", type=int, help="Port of the server to ping")
