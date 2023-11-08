@@ -104,8 +104,6 @@ def main():
         test()
         checkpoint(epoch)
 
-    # Wait for the PID thread to finish
-    pid_thread.join()
 
 if __name__ == "__main__":
     main()
