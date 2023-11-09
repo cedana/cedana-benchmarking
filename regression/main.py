@@ -34,6 +34,7 @@ def get_batch(batch_size=32):
 
 def main():
     # Rest of your code for model training
+    device = torch.device("cpu")
     fc = torch.nn.Linear(W_target.size(0), 1)
     # ...
 
