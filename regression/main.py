@@ -1,5 +1,6 @@
 from __future__ import print_function
 from itertools import count
+import os
 
 import torch
 import torch.nn.functional as F
@@ -7,6 +8,7 @@ import torch.nn.functional as F
 POLY_DEGREE = 7
 W_target = torch.randn(POLY_DEGREE, 1) * 5
 b_target = torch.randn(1) * 5
+os.environ["CUDA_VISIBLE_DEVICES"]=""
 
 def make_features(x):
     """Builds features i.e. a matrix with columns [x, x^2, x^3, x^4]."""
