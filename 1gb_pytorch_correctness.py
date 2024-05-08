@@ -1,7 +1,6 @@
 import asyncio
 import grpc
-import task_pb2_grpc
-import task_pb2
+from tplib import task_pb2, task_pb2_grpc
 import time
 import torch
 import torch.nn as nn
