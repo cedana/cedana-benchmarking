@@ -56,8 +56,8 @@ async def main():
     print("jobID = ", jobID)
     dump_args = task_pb2.DumpArgs()
     dump_args.Dir = "/terminal-ckpt/"
-    dump_args.Type = task_pb2.DumpArgs.LOCAL
-    dump_args.JobID = jobID
+    dump_args.Type = task_pb2.CRType.LOCAL
+    dump_args.JID = jobID
     stub = task_pb2_grpc.TaskServiceStub(channel)
     dump_resp = await stub.Dump(dump_args)
     print(dump_resp)
